@@ -3,7 +3,7 @@
 from json import loads
 from requests import post
 
-from .log import LoggingClass
+from fancylog import LoggingClass
 
 __all__ = ['ReCaptcha']
 
