@@ -1,4 +1,4 @@
-"""Miscellaneous web clients"""
+"""A reCAPTCHA library"""
 
 from json import loads
 from requests import post
