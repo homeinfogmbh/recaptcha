@@ -1,37 +1,42 @@
-"""A reCAPTCHA library"""
+"""A reCAPTCHA library."""
 
 from json import loads
 from requests import post
 
-from fancylog import LoggingClass
-
-__all__ = ['ReCaptcha']
+__all__ = ['VERIFICATION_URL', 'query', 'ReCaptcha']
 
 
-class ReCaptcha(LoggingClass):
-    """Google reCAPTCHA client"""
+VERIFICATION_URL = 'https://www.google.com/recaptcha/api/siteverify'
 
-    VERIFICATION_URL = 'https://www.google.com/recaptcha/api/siteverify'
 
-    def __init__(self, secret, logger=None):
-        """Sets basic reCAPTCHA data"""
-        super().__init__(logger=logger)
+def query(params, url=VERIFICATION_URL, raw=False):
+    """Queries the remote API."""
+
+    response = post(url, params=params)
+
+    if raw:
+        return response
+
+    return loads(response.text)
+
+
+class ReCaptcha:
+    """Google reCAPTCHA client."""
+
+    def __init__(self, secret):
+        """Sets the secret key."""
         self.secret = secret
 
-    def validate(self, response, remote_ip=None):
-        """Verifies reCAPTCHA data"""
+    def gen_params(self, response, remote_ip=None):
+        """Generates the query parameters."""
         params = {'secret': self.secret, 'response': response}
 
         if remote_ip is not None:
             params['remoteip'] = remote_ip
 
-        reply = post(self.VERIFICATION_URL, params=params)
+        return params
 
-        try:
-            dictionary = loads(reply.text)
-        except ValueError:
-            self.logger.error('Invalid reCAPTCHA response: {}'.format(
-                reply.text))
-            return False
-        else:
-            return dictionary.get('success', False)
+    def validate(self, response, remote_ip=None):
+        """Verifies reCAPTCHA data."""
+        params = self.gen_params(response, remote_ip=remote_ip)
+        return query(params).get('success', False)
