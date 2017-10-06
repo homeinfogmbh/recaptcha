@@ -5,7 +5,10 @@ from distutils.core import setup
 setup(
     name='recaptcha',
     version='latest',
-    author='Richard Neumann',
+    author='HOMEINFO - Digitale Informationssysteme GmbH',
+    author_email='info@homeinfo.de',
+    maintainer='Richard Neumann',
+    maintainer_email='r.neumann@homeinfo.de',
     py_modules=['recaptcha'],
-    license=open('LICENSE').read(),
-    description='A Google™ reCAPTCHA™ library')
+    license='GPLv3',
+    description='A library for validating CAPTCHAs.')
