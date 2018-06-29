@@ -3,10 +3,16 @@
 from json import loads
 from requests import post
 
-__all__ = ['VERIFICATION_URL', 'query', 'ReCaptcha']
+__all__ = ['ValidationError', 'ReCaptcha']
 
 
 VERIFICATION_URL = 'https://www.google.com/recaptcha/api/siteverify'
+
+
+class ValidationError(Exception):
+    """Indicates that the ReCAPTCHA validation was not successful."""
+
+    pass
 
 
 def query(params, url=VERIFICATION_URL, raw=False):
@@ -39,4 +45,8 @@ class ReCaptcha:
     def validate(self, response, remote_ip=None):
         """Verifies reCAPTCHA data."""
         params = self.gen_params(response, remote_ip=remote_ip)
-        return query(params).get('success', False)
+
+        if query(params).get('success', False):
+            return True
+
+        raise ValidationError()
