@@ -27,7 +27,7 @@ def query(params, url=VERIFICATION_URL, raw=False):
 
 
 class ReCaptcha:
-    """Google reCAPTCHA client."""
+    """A ReCAPTCHA client."""
 
     def __init__(self, secret):
         """Sets the secret key."""
