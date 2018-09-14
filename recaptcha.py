@@ -49,4 +49,4 @@ class ReCaptcha:
         if query(params).get('success', False):
             return True
 
-        raise ValidationError()
+        raise VerificationError()
