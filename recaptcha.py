@@ -17,6 +17,7 @@ class VerificationError(Exception):
 
 def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
     """Verifies reCAPTCHA data."""
+
     params = {'secret': secret, 'response': response}
 
     if remote_ip is not None:
