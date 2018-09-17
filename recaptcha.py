@@ -3,7 +3,7 @@
 from json import loads
 from requests import post
 
-__all__ = ['VerificationError', 'ReCaptcha']
+__all__ = ['VerificationError', 'verify']
 
 
 VERIFICATION_URL = 'https://www.google.com/recaptcha/api/siteverify'
@@ -15,38 +15,17 @@ class VerificationError(Exception):
     pass
 
 
-def query(params, url=VERIFICATION_URL, raw=False):
-    """Queries the remote API."""
+def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
+    """Verifies reCAPTCHA data."""
+    params = {'secret': secret, 'response': response}
+
+    if remote_ip is not None:
+        params['remoteip'] = remote_ip
 
     response = post(url, params=params)
+    json = loads(response.text)
 
-    if raw:
-        return response
+    if json.get('success', False):
+        return True
 
-    return loads(response.text)
-
-
-class ReCaptcha:
-    """A ReCAPTCHA client."""
-
-    def __init__(self, secret):
-        """Sets the secret key."""
-        self.secret = secret
-
-    def gen_params(self, response, remote_ip=None):
-        """Generates the query parameters."""
-        params = {'secret': self.secret, 'response': response}
-
-        if remote_ip is not None:
-            params['remoteip'] = remote_ip
-
-        return params
-
-    def verify(self, response, remote_ip=None):
-        """Verifies reCAPTCHA data."""
-        params = self.gen_params(response, remote_ip=remote_ip)
-
-        if query(params).get('success', False):
-            return True
-
-        raise VerificationError()
+    raise VerificationError()
