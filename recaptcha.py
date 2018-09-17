@@ -1,7 +1,9 @@
 """A reCAPTCHA library."""
 
 from json import loads
+
 from requests import post
+
 
 __all__ = ['VerificationError', 'verify']
 
