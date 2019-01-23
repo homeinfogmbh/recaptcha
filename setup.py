@@ -10,6 +10,5 @@ setup(
     maintainer='Richard Neumann',
     maintainer_email='<r dot neumann at homeinfo priod de>',
     py_modules=['recaptcha'],
-    install_requires=['requests'],
     license='GPLv3',
     description='A library for validating CAPTCHAs.')
