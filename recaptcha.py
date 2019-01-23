@@ -14,8 +14,6 @@ VERIFICATION_URL = 'https://www.google.com/recaptcha/api/siteverify'
 class VerificationError(Exception):
     """Indicates that the ReCAPTCHA validation was not successful."""
 
-    pass
-
 
 def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
     """Verifies reCAPTCHA data."""
