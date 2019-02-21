@@ -1,8 +1,16 @@
 # recaptcha
 A Google™ reCAPTCHA™ library.
 
-## Requires:
-* requests
+## Usage:
+
+    from recaptcha import VerificationError, verify
+
+    try:
+        verify('recaptcha_secret', 'recaptcha_response')
+    except VerificationError:
+        print('Veirification failed.')
+    else:
+        print('Verification succeeded.')
 
 ## Legal
 This product is not affiliated with Google™ Inc.  
