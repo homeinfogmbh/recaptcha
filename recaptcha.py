@@ -1,8 +1,8 @@
 """A reCAPTCHA verification library."""
 
 from json import loads
-from urllib.request import urlopen
 from urllib.parse import urlencode, ParseResult
+from urllib.request import urlopen
 
 
 __all__ = ['VerificationError', 'verify']
