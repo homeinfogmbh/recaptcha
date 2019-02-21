@@ -1,21 +1,23 @@
 """A reCAPTCHA verification library."""
 
-from requests import post
+from json import loads
+from urllib.request import urlopen
+from urllib.parse import urlencode, ParseResult
 
 
 __all__ = ['VerificationError', 'verify']
 
 
-VERIFICATION_URL = 'https://www.google.com/recaptcha/api/siteverify'
+VERIFICATION_URL = ('https', 'www.google.com', '/recaptcha/api/siteverify')
 
 
 class VerificationError(Exception):
     """Indicates that the ReCAPTCHA validation was not successful."""
 
-    def __init__(self, response):
+    def __init__(self, json):
         """Sets the response object."""
         super().__init__()
-        self.response = response
+        self.json = json
 
 
 def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
@@ -26,10 +28,12 @@ def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
     if remote_ip is not None:
         params['remoteip'] = remote_ip
 
-    response = post(url, params=params)
-    json = response.json()
+    url = ParseResult(*VERIFICATION_URL, '', urlencode(params), '').geturl()
+
+    with urlopen(url) as request:
+        json = loads(request.read())
 
     if json.get('success', False):
         return True
 
-    raise VerificationError(response)
+    raise VerificationError(json)
