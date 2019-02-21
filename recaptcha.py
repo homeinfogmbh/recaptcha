@@ -28,9 +28,9 @@ def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
     if remote_ip is not None:
         params['remoteip'] = remote_ip
 
-    url = ParseResult(*VERIFICATION_URL, '', urlencode(params), '').geturl()
+    parse_result = ParseResult(*VERIFICATION_URL, '', urlencode(params), '')
 
-    with urlopen(url) as request:
+    with urlopen(parse_result.geturl()) as request:
         json = loads(request.read())
 
     if json.get('success', False):
