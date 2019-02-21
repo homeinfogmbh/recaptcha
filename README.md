@@ -8,7 +8,7 @@ A Google™ reCAPTCHA™ library.
     try:
         verify('recaptcha_secret', 'recaptcha_response')
     except VerificationError:
-        print('Veirification failed.')
+        print('Verification failed.')
     else:
         print('Verification succeeded.')
 
