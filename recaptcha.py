@@ -1,6 +1,6 @@
 """A reCAPTCHA verification library."""
 
-from json import loads
+from json import load
 from urllib.parse import urlencode, ParseResult
 from urllib.request import urlopen
 
@@ -20,7 +20,7 @@ class VerificationError(Exception):
         self.json = json
 
 
-def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
+def verify(secret, response, remote_ip=None):
     """Verifies reCAPTCHA data."""
 
     params = {'secret': secret, 'response': response}
@@ -31,7 +31,7 @@ def verify(secret, response, remote_ip=None, *, url=VERIFICATION_URL):
     parse_result = ParseResult(*VERIFICATION_URL, '', urlencode(params), '')
 
     with urlopen(parse_result.geturl()) as request:
-        json = loads(request.read())
+        json = load(request)
 
     if json.get('success', False):
         return True
