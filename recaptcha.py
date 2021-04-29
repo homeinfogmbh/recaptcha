@@ -2,7 +2,7 @@
 
 from json import load
 from typing import Optional
-from urllib.parse import urlencode, ParseResult
+from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
 
 
@@ -30,9 +30,9 @@ def verify(secret: str, response: str,
     if remote_ip is not None:
         params['remoteip'] = remote_ip
 
-    parse_result = ParseResult(*VERIFICATION_URL, '', urlencode(params), '')
+    url = urlunparse((*VERIFICATION_URL, '', urlencode(params), ''))
 
-    with urlopen(parse_result.geturl()) as request:
+    with urlopen(url) as request:
         json = load(request)
 
     if json.get('success', False):
