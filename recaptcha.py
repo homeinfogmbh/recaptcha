@@ -21,8 +21,8 @@ class VerificationError(Exception):
         self.json = json
 
 
-def verify(secret: str, response: str,
-           remote_ip: Optional[str] = None) -> bool:
+def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
+           fail_silently: bool = False) -> bool:
     """Verifies reCAPTCHA data."""
 
     params = {'secret': secret, 'response': response}
@@ -37,5 +37,8 @@ def verify(secret: str, response: str,
 
     if json.get('success', False):
         return True
+
+    if fail_silently:
+        return False
 
     raise VerificationError(json)
