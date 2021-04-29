@@ -15,7 +15,7 @@ VERIFICATION_URL = ('https', 'www.google.com', '/recaptcha/api/siteverify')
 class VerificationError(Exception):
     """Indicates that the ReCAPTCHA validation was not successful."""
 
-    def __init__(self, json):
+    def __init__(self, json: dict):
         """Sets the response object."""
         super().__init__()
         self.json = json
