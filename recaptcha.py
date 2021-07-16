@@ -51,19 +51,17 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
     raise VerificationError(json)
 
 
-def recaptcha(secret: str, *, accessor: Optional[Callable] = None,
-              key: str = 'response', check_ip: bool = False) -> Callable:
+def recaptcha(secret: str, *,
+              accessor: lambda request: request.json.get('response'),
+              check_ip: bool = False) -> Callable:
     """Decorator to run a function with previous recaptcha check."""
-
-    if accessor is None:
-        accessor = lambda: request.json.get(key)
 
     def decorator(function: Callable) -> Callable:
         @wraps(function)
         def wrapper(*args, **kwargs) -> Any:    # pylint: disable=R1710
             remote_ip = request.remote_addr if check_ip else None
 
-            if verify(secret, accessor(), remote_ip):
+            if verify(secret, accessor(request), remote_ip):
                 return function(*args, **kwargs)
 
         return wrapper
