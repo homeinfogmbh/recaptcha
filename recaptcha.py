@@ -1,12 +1,19 @@
 """A reCAPTCHA verification library."""
 
+from functools import wraps
 from json import load
-from typing import Optional
+from logging import warning
+from typing import Any, Callable, Optional
 from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
 
+try:
+    from flask import request
+except ImportError:
+    warning('flask not installed. @recaptcha() not available.')
 
-__all__ = ['VerificationError', 'verify']
+
+__all__ = ['VerificationError', 'verify', 'recaptcha']
 
 
 VERIFICATION_URL = ('https', 'www.google.com', '/recaptcha/api/siteverify')
@@ -32,8 +39,8 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
 
     url = urlunparse((*VERIFICATION_URL, '', urlencode(params), ''))
 
-    with urlopen(url) as request:
-        json = load(request)
+    with urlopen(url) as http_request:
+        json = load(http_request)
 
     if json.get('success', False):
         return True
@@ -42,3 +49,23 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
         return False
 
     raise VerificationError(json)
+
+
+def recaptcha(secret: str, *, accessor: Optional[Callable] = None,
+              key: str = 'response', check_ip: bool = False) -> Callable:
+    """Decorator to run a function with previous recaptcha check."""
+
+    if accessor is None:
+        accessor = lambda: request.json.get(key)
+
+    def decorator(function: Callable) -> Callable:
+        @wraps(function)
+        def wrapper(*args, **kwargs) -> Any:    # pylint: disable=R1710
+            remote_ip = request.remote_addr if check_ip else None
+
+            if verify(secret, accessor(), remote_ip):
+                return function(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
