@@ -17,7 +17,7 @@ else:
 or:
 
 ```python
-from recaptcha import VerificationError, verify
+from recaptcha import verify
 
 if verify('recaptcha_secret', 'recaptcha_response', fail_silently=True):
     print('Verification succeeded.')
