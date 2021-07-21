@@ -3,7 +3,7 @@
 from functools import wraps
 from json import load
 from logging import warning
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
 
@@ -51,7 +51,7 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
     raise VerificationError(json)
 
 
-def recaptcha(secret: str, *,
+def recaptcha(secret: Union[str, Callable[[], str]], *,
               accessor: lambda request: request.json.get('response'),
               check_ip: bool = False) -> Callable:
     """Decorator to run a function with previous recaptcha check."""
@@ -60,8 +60,9 @@ def recaptcha(secret: str, *,
         @wraps(function)
         def wrapper(*args, **kwargs) -> Any:    # pylint: disable=R1710
             remote_ip = request.remote_addr if check_ip else None
+            key = secret() if callable(secret) else secret
 
-            if verify(secret, accessor(request), remote_ip):
+            if verify(key, accessor(request), remote_ip):
                 return function(*args, **kwargs)
 
         return wrapper
