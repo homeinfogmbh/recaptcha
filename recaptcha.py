@@ -52,7 +52,7 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
 
 
 def recaptcha(secret: Union[str, Callable[[], str]], *,
-              accessor: lambda request: request.json.get('response'),
+              accessor: Callable = lambda request: request.json.get('response'),
               check_ip: bool = False) -> Callable:
     """Decorator to run a function with previous recaptcha check."""
 
