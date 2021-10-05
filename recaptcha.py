@@ -1,16 +1,11 @@
 """A reCAPTCHA verification library."""
 
+from configparser import ConfigParser
 from functools import wraps
 from json import load
-from logging import warning
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
-
-try:
-    from flask import request
-except ImportError:
-    warning('flask not installed. @recaptcha() not available.')
 
 
 __all__ = ['VerificationError', 'verify', 'recaptcha']
@@ -51,19 +46,26 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
     raise VerificationError(json)
 
 
-def recaptcha(secret: Union[str, Callable[[], str]], *,
-              accessor: Callable = lambda request: request.json.get('response'),
-              check_ip: bool = False) -> Callable:
-    """Decorator to run a function with previous recaptcha check."""
+def recaptcha(config: ConfigParser, *, section: str = 'recaptcha') -> Callable:
+    """Decorator to run a function with previous recaptcha
+    check as defined in the provided configuration.
+    """
 
-    def decorator(function: Callable) -> Callable:
+    from flask import request   # pylint: disable=C0415
+
+    def decorator(function: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(function)
-        def wrapper(*args, **kwargs) -> Any:    # pylint: disable=R1710
+        def wrapper(*args, **kwargs) -> Any:
+            secret = config.get(section, 'secret')
+            check_ip = config.get(section, 'check_ip', fallback=False)
             remote_ip = request.remote_addr if check_ip else None
-            key = secret() if callable(secret) else secret
+            json_key = config.get(section, 'json_key', fallback='response')
+            response = request.json.get(json_key)
 
-            if verify(key, accessor(request), remote_ip):
+            if verify(secret, response, remote_ip):
                 return function(*args, **kwargs)
+
+            raise VerificationError(None)
 
         return wrapper
 
