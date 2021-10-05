@@ -25,7 +25,7 @@ class VerificationError(Exception):
 
     def __init__(self, json: dict):
         """Sets the response object."""
-        super().__init__()
+        super().__init__(*json.get('error-codes', []))
         self.json = json
 
 
