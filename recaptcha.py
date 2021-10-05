@@ -3,9 +3,15 @@
 from configparser import ConfigParser
 from functools import wraps
 from json import load
-from typing import Any, Callable, Optional
+from logging import warning
+from typing import Any, Callable, Iterator, Optional
 from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
+
+try:
+    from flask import request
+except ModuleNotFoundError:
+    warning('Flask not installed. @recaptcha will not work.')
 
 
 __all__ = ['VerificationError', 'verify', 'recaptcha']
@@ -23,19 +29,14 @@ class VerificationError(Exception):
         self.json = json
 
 
-def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
-           fail_silently: bool = False) -> bool:
-    """Verifies reCAPTCHA data."""
+def get_url(params: dict) -> str:
+    """Returns a URL with the given parameters."""
 
-    params = {'secret': secret, 'response': response}
+    return urlunparse((*VERIFICATION_URL, '', urlencode(params), ''))
 
-    if remote_ip is not None:
-        params['remoteip'] = remote_ip
 
-    url = urlunparse((*VERIFICATION_URL, '', urlencode(params), ''))
-
-    with urlopen(url) as http_request:
-        json = load(http_request)
+def check_result(json: dict, *, fail_silently: bool = False) -> bool:
+    """Checks the verification result."""
 
     if json.get('success', False):
         return True
@@ -46,26 +47,41 @@ def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
     raise VerificationError(json)
 
 
+def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
+           fail_silently: bool = False) -> bool:
+    """Verifies reCAPTCHA data."""
+
+    params = {'secret': secret, 'response': response}
+
+    if remote_ip is not None:
+        params['remoteip'] = remote_ip
+
+    with urlopen(get_url(params)) as http_request:
+        return check_result(load(http_request), fail_silently=fail_silently)
+
+
+def get_params(config: ConfigParser, section: str) -> Iterator[str]:
+    """Returns the verification parameters."""
+
+    yield config.get(section, 'secret')
+    yield request.json.get(config.get(section, 'key', fallback='response'))
+
+    if config.getboolean(section, 'check_ip', fallback=False):
+        yield request.remote_addr
+
+
 def recaptcha(config: ConfigParser, *, section: str = 'recaptcha') -> Callable:
     """Decorator to run a function with previous recaptcha
     check as defined in the provided configuration.
     """
 
-    from flask import request   # pylint: disable=C0415
-
     def decorator(function: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(function)
         def wrapper(*args, **kwargs) -> Any:
-            secret = config.get(section, 'secret')
-            check_ip = config.get(section, 'check_ip', fallback=False)
-            remote_ip = request.remote_addr if check_ip else None
-            json_key = config.get(section, 'json_key', fallback='response')
-            response = request.json.get(json_key)
-
-            if verify(secret, response, remote_ip):
+            if verify(*get_params(config, section)):
                 return function(*args, **kwargs)
 
-            raise VerificationError(None)
+            raise Exception('Nasty bug in recaptcha.py. Please report.')
 
         return wrapper
 
