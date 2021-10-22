@@ -64,7 +64,7 @@ def get_params(config: ConfigParser, section: str) -> Iterator[str]:
     """Returns the verification parameters."""
 
     yield config.get(section, 'secret')
-    yield request.json.get(config.get(section, 'key', fallback='response'))
+    yield request.json.pop(config.get(section, 'key', fallback='response'))
 
     if config.getboolean(section, 'check_ip', fallback=False):
         yield request.remote_addr
