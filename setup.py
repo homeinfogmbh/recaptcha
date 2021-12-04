@@ -9,6 +9,7 @@ setup(
         "local_scheme": "node-and-timestamp"
     },
     setup_requires=['setuptools_scm'],
+    extras_require={'flask integration': ['flask']},
     author='HOMEINFO - Digitale Informationssysteme GmbH',
     author_email='<info at homeinfo dot de>',
     maintainer='Richard Neumann',
