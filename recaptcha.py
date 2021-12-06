@@ -4,7 +4,7 @@ from configparser import ConfigParser
 from functools import wraps
 from json import load
 from logging import warning
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator, Optional, Union
 from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
 
@@ -18,6 +18,7 @@ __all__ = ['VerificationError', 'verify', 'recaptcha']
 
 
 VERIFICATION_URL = ('https', 'www.google.com', '/recaptcha/api/siteverify')
+Config = Union[ConfigParser, Callable[[], ConfigParser]]
 
 
 class VerificationError(Exception):
@@ -70,7 +71,7 @@ def get_params(config: ConfigParser, section: str) -> Iterator[str]:
         yield request.remote_addr
 
 
-def recaptcha(config: ConfigParser, *, section: str = 'recaptcha') -> Callable:
+def recaptcha(config: Config, *, section: str = 'recaptcha') -> Callable:
     """Decorator to run a function with previous recaptcha
     check as defined in the provided configuration.
     """
@@ -78,7 +79,9 @@ def recaptcha(config: ConfigParser, *, section: str = 'recaptcha') -> Callable:
     def decorator(function: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(function)
         def wrapper(*args, **kwargs) -> Any:
-            if verify(*get_params(config, section)):
+            configuration = config() if callable(config) else config
+
+            if verify(*get_params(configuration, section)):
                 return function(*args, **kwargs)
 
             raise Exception('Nasty bug in recaptcha.py. Please report.')
