@@ -48,8 +48,12 @@ def check_result(json: dict, *, fail_silently: bool = False) -> bool:
     raise VerificationError(json)
 
 
-def verify(secret: str, response: str, remote_ip: Optional[str] = None, *,
-           fail_silently: bool = False) -> bool:
+def verify(
+        secret: str,
+        response: str,
+        remote_ip: Optional[str] = None, *,
+        fail_silently: bool = False
+) -> bool:
     """Verifies reCAPTCHA data."""
 
     params = {'secret': secret, 'response': response}
