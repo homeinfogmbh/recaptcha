@@ -1,24 +1,19 @@
 """A reCAPTCHA verification library."""
 
-from configparser import ConfigParser
+from configparser import SectionProxy
 from functools import wraps
 from json import load
-from logging import warning
 from typing import Any, Callable, Iterator, Optional, Union
 from urllib.parse import urlencode, urlunparse
 from urllib.request import urlopen
-
-try:
-    from flask import request
-except ModuleNotFoundError:
-    warning('Flask not installed. @recaptcha will not work.')
 
 
 __all__ = ['VerificationError', 'verify', 'recaptcha']
 
 
 VERIFICATION_URL = ('https', 'www.google.com', '/recaptcha/api/siteverify')
-Config = Union[ConfigParser, Callable[[], ConfigParser]]
+ConfigType = Union[SectionProxy, dict]
+Config = Union[ConfigType, Callable[[], ConfigType]]
 
 
 class VerificationError(Exception):
@@ -51,7 +46,8 @@ def check_result(json: dict, *, fail_silently: bool = False) -> bool:
 def verify(
         secret: str,
         response: str,
-        remote_ip: Optional[str] = None, *,
+        remote_ip: Optional[str] = None,
+        *,
         fail_silently: bool = False
 ) -> bool:
     """Verifies reCAPTCHA data."""
@@ -65,17 +61,33 @@ def verify(
         return check_result(load(http_request), fail_silently=fail_silently)
 
 
-def get_params(config: ConfigParser, section: str) -> Iterator[str]:
+def get_params(
+        config: Union[SectionProxy, dict],
+        response_getter: Callable[[], str],
+        ip_getter: Optional[Callable[[], str]]
+) -> Iterator[str]:
     """Returns the verification parameters."""
 
-    yield config.get(section, 'secret')
-    yield request.json.pop(config.get(section, 'key', fallback='response'))
+    yield config.get('secret')
+    yield response_getter()
 
-    if config.getboolean(section, 'check_ip', fallback=False):
-        yield request.remote_addr
+    if isinstance(config, SectionProxy):
+        check_ip = config.getboolean('check_ip', fallback=False)
+    else:
+        check_ip = config.get('check_ip', False)
+
+    if check_ip:
+        if ip_getter is None:
+            raise ValueError('IP check requested, but no ip_getter provided.')
+
+        yield ip_getter()
 
 
-def recaptcha(config: Config, *, section: str = 'recaptcha') -> Callable:
+def recaptcha(
+        config: Config,
+        response_getter: Callable[[], str],
+        ip_getter: Optional[Callable[[], str]] = None
+) -> Callable:
     """Decorator to run a function with previous recaptcha
     check as defined in the provided configuration.
     """
@@ -84,8 +96,9 @@ def recaptcha(config: Config, *, section: str = 'recaptcha') -> Callable:
         @wraps(function)
         def wrapper(*args, **kwargs) -> Any:
             configuration = config() if callable(config) else config
+            params = get_params(configuration, response_getter, ip_getter)
 
-            if verify(*get_params(configuration, section)):
+            if verify(*params):
                 return function(*args, **kwargs)
 
             raise Exception('Nasty bug in recaptcha.py. Please report.')
