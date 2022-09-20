@@ -62,7 +62,7 @@ def verify(
 
 
 def get_params(
-        config: Union[SectionProxy, dict],
+        config: ConfigType,
         response_getter: Callable[[], str],
         ip_getter: Optional[Callable[[], str]]
 ) -> Iterator[str]:
