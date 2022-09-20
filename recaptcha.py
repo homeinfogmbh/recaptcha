@@ -90,9 +90,9 @@ def get_bool(config: ConfigType, key: str, fallback: bool = False) -> bool:
     """Return a boolean value from the given config key."""
 
     if isinstance(config, SectionProxy):
-        return config.getboolean('check_ip', fallback=fallback)
+        return config.getboolean(key, fallback=fallback)
 
-    return config.get('check_ip', fallback)
+    return config.get(key, fallback)
 
 
 def get_params(
