@@ -61,6 +61,15 @@ def verify(
         return check_result(load(http_request), fail_silently=fail_silently)
 
 
+def get_bool(config: ConfigType, key: str, fallback: bool = False) -> bool:
+    """Return a boolean value from the given config key."""
+
+    if isinstance(config, SectionProxy):
+        return config.getboolean('check_ip', fallback=fallback)
+
+    return config.get('check_ip', fallback)
+
+
 def get_params(
         config: ConfigType,
         response_getter: Callable[[], str],
@@ -71,12 +80,7 @@ def get_params(
     yield config.get('secret')
     yield response_getter()
 
-    if isinstance(config, SectionProxy):
-        check_ip = config.getboolean('check_ip', fallback=False)
-    else:
-        check_ip = config.get('check_ip', False)
-
-    if check_ip:
+    if get_bool(config, 'check_ip', fallback=False):
         if ip_getter is None:
             raise ValueError('IP check requested, but no ip_getter provided.')
 
